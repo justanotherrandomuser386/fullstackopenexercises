@@ -6,7 +6,7 @@ const Button = ({handleClick, name}) => {
   )
 }
 
-const Display = ({label, value}) => {
+const StatisticLine = ({label, value}) => {
   return (
     <div>
       <label>{label}</label> {value}
@@ -32,12 +32,12 @@ const Statistics = ({good, neutral, bad}) => {
     return (
       <>
         <h1>statistics</h1>
-        <Display label={'good'} value={good}/>
-        <Display label={'neutral'} value={neutral}/>
-        <Display label={'bad'} value={bad}/>
-        <Display label={'all'} value={all}/>
-        <Display label={'average'} value={average}/>
-        <Display label={'positive'} value={positive}/>
+        <StatisticLine label={'good'} value={good}/>
+        <StatisticLine label={'neutral'} value={neutral}/>
+        <StatisticLine label={'bad'} value={bad}/>
+        <StatisticLine label={'all'} value={all}/>
+        <StatisticLine label={'average'} value={average}/>
+        <StatisticLine label={'positive'} value={positive}/>
       </>
   )
    }
