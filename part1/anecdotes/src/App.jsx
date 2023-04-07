@@ -31,11 +31,15 @@ function App() {
   
   return (
     <div>
-
+      <h1>Anecdote of the day</h1>
       {anecdotes[selected]}<br/>
       has {votes[selected]} votes<br/>
       <Vote handleVotes={setVotes} votes={votes} selected={selected}/>
       <Next handleSelected={setSelected} range={anecdotes.length}/>
+
+      <h1>Anecdote with most votes</h1>
+      {anecdotes[( votes.indexOf(votes.reduce((a, b) => Math.max(a, b), -Infinity)) )]}<br/>
+      has {votes.reduce((a, b) => Math.max(a, b), -Infinity)} votes
     </div>
   )
 }
