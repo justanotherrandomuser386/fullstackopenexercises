@@ -14,14 +14,25 @@ const Display = ({label, value}) => {
   )
 }
 
+const Statistics = ({good, neutral, bad}) => {
+  const all = good + bad + neutral
+  const average = all != 0  ? (good - bad) / all : 0
+  const positive = all != 0 ? 100*good/all : 0
+  
+  return (
+    <>
+      <Display label={'all'} value={all}/>
+      <Display label={'average'} value={average}/>
+      <Display label={'positive'} value={positive}/>
+    </>
+  )
+   }
+
 function App() {
   const [good, setGood] = useState(0)
   const [neutral, setNeutral] = useState(0)
   const [bad, setBad] = useState(0)
 
-  let all = good + bad + neutral
-  let average = all != 0  ? (good - bad) / all : 0
-  let positive = all != 0 ? 100*good/all : 0
   return (
     <div>
       <Button handleClick={ () => {setGood(good + 1)} } name='good'/>
@@ -31,9 +42,7 @@ function App() {
       <Display label={'good'} value={good}/>
       <Display label={'neutral'} value={neutral}/>
       <Display label={'bad'} value={bad}/>
-      <Display label={'all'} value={all}/>
-      <Display label={'average'} value={average}/>
-      <Display label={'positive'} value={positive}/>
+      <Statistics good={good} neutral={neutral} bad={bad}/>
     </div>
   )
 }
