@@ -35,7 +35,6 @@ function App() {
   const addName = (event) => {
     event.preventDefault()
     const existingPerson =persons.filter(person => person.name === newName) 
-    console.log(existingPerson)
     if (existingPerson.length > 0) {
       if (window.confirm(`{newName} is already added to phonebook, replace the old number with a new number?`)) {
         const newPerson = {
@@ -55,7 +54,19 @@ function App() {
               style:''
             })
           }, 5000)
-        })
+        }).catch(()=>{
+            setNotification({
+              message:`Information of ${newPerson.name} has already been removed from server`,
+              style: 'error'
+            })
+            setTimeout(() => {
+              setNotification({
+                message:'',
+                style:''
+              })
+            }, 5000)
+            
+          })
       }
     } else {
       const newPerson = {
@@ -85,7 +96,19 @@ function App() {
       phones.deleteNum(id).then(() => {
         const newPersons = persons.filter(person => person.id != id)
         setPersons(newPersons)
-      })
+      }).catch(() => {
+            setNotification({
+              message:`Information of ${name} has already been removed from server`,
+              style: 'error'
+            })
+            setTimeout(() => {
+              setNotification({
+                message:'',
+                style:''
+              })
+            }, 5000)
+
+        })
     }
   }
   
