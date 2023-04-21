@@ -2,7 +2,7 @@ import './CountryList.css'
 import CountryInfo from './CountryInfo'
 
 
-const CountryList = ({ countries, filter }) => {
+const CountryList = ({ countries, filter, clickHandler }) => {
   if (countries === null) {
     return (
       <div>Loading....</div>
@@ -29,7 +29,7 @@ const CountryList = ({ countries, filter }) => {
     <div>
       <ul className='countrilist'>
         {filteredCountries.map(country => {
-          return <li key={country.name.official}>{country.name.official}</li>
+          return <li key={country.name.official}>{country.name.official} <button onClick={() => clickHandler(country.name.official)}>show</button></li>
         })}
       </ul> 
     </div>

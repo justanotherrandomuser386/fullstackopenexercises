@@ -5,30 +5,21 @@ import getAllInfo from './services/countries'
 
 function App() {
   
-
+  
   const [countryFilter, setCountryFilter] = useState('')
   const [countries, setCountries] = useState(null)
 
+  const handleShowButtonClick = (setCountryFilter) => {
+    return (country) => {
+      setCountryFilter(country)
+    }
+  }
 
   const handleCountryChange = (event) => {
     setCountryFilter(event.target.value)
   }
 
-  const cList = [
-    {name:'Argentina'},
-    {name:'Armenia'},
-    {name:'Austria'},
-    {name:'Austaralia'},
-    {name:'Barbados'},
-    {name:'Cuba'},
-    {name:'Congo'},
-    {name:'England'},
-    {name:'Estonia'},
-    {name:'Italy'},
-    {name:'Litva'},
-    {name:'Morocco'},
-  ]
-
+  
   useEffect(() => {
     getAllInfo().then(data => {
       setCountries(data)
@@ -37,7 +28,7 @@ function App() {
   return (
     <div>
       <Filter country={countryFilter} handleCountryChange={handleCountryChange}/>
-      <CountryList countries={countries} filter={countryFilter}/>
+      <CountryList countries={countries} filter={countryFilter} clickHandler={handleShowButtonClick(setCountryFilter)}/>
     </div>
   )
 }
