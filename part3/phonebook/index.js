@@ -1,8 +1,11 @@
+require('dotenv').config()
+
 const morgan = require('morgan')
 const express = require('express')
+const Person = require('./models/persons.js')
 const app = express()
 
-
+/*
 let persons = [
     { 
       "id": 1,
@@ -25,65 +28,75 @@ let persons = [
       "number": "39-23-6423122"
     }
 ]
-
+*/
 app.use(express.static('dist'))
 app.use(express.json())
 morgan.token('data', (request, response) => {return JSON.stringify(request.body)})
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
-
+/*
 app.get('/api/persons', (request, response) => {
   response.json(persons)
 })
+*/
+
+app.get('/api/persons', (request, response) => {
+  Person.find({}).then(persons => {
+    response.json(persons)
+  })
+})
 
 app.get('/api/info', (request, response) => {
-  const timestamp = new Date() 
-  const size = persons.length
+  Person.find({}).then(persons => {
+    const timestamp = new Date() 
+    const size = persons.length
 
-  response.end(`Phonebook has info for ${size} people\n\r${timestamp.toString()}`)
+    response.end(`Phonebook has info for ${size} people\n\r${timestamp.toString()}`)
+    
+  })
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = parseInt(request.params.id)
-  const person = persons.find(person => person.id === id)
-  if (person) {
+  Person.findById(request.params.id).then(person => {
     response.json(person)
-  } else {
-    response.status(404).end()
-  }
+  })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-  const id = parseInt(request.params.id)
-  persons = persons.filter(person => person.id !== id)
-  response.status(204).end()
+  Person.deleteOne({_id:request.params.id}).then(result => {
+    if (result.deletedCount == 1) {
+      response.status(204).end()
+    }
+  })
 })
-
-const generateId = () => {
-  const RANGE = 10**10
-  return Math.floor(Math.random() * RANGE)
-}
-
 
 app.post('/api/persons', (request, response) => {
   const body = request.body
   console.log(body)
   if (!body.name) {
+    console.log('1')
     return response.status(400).json({error: 'Name missing'})
   }
-
-  if (persons.filter(person => person.name === body.name).length > 0) {
-    return response.status(400).json({error: 'name must be unique'})
-  }
+  
   if (!body.number) {
+    console.log('3')
     return response.status(400).json({errror: 'Number missin'})
   }
-  const person = {
-    id: generateId(),
-    name: body.name,
-    number: body.number
-  }
-  persons = persons.concat(person)
-  response.json(person)
+
+  Person.countDocuments({name: body.name}).then(count => {
+    if (count == 1) {
+      console.log('2')
+      return response.status(400).json({error: 'name must be unique'})
+    }
+  }).then(() => {
+    const person = new Person ({
+      name: body.name,
+      number: body.number,
+    })
+    person.save().then(() => {
+      console.log('4444')
+      response.json(person)
+    })
+  }) 
 })
 
 const PORT = 3001
