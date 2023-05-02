@@ -54,7 +54,8 @@ function App() {
               style:''
             })
           }, 5000)
-        }).catch(()=>{
+        }).catch((error)=>{
+            console.log(error.response.data.error) 
             setNotification({
               message:`Information of ${newPerson.name} has already been removed from server`,
               style: 'error'
@@ -74,18 +75,33 @@ function App() {
         name: newName,
         number: newNumber
       }
-      phones.create(newPerson).then(newPerson =>
-      setPersons(persons.concat(newPerson)))
-      setNotification({
-        message:`${newPerson.name} number was added`,
-        style: 'info'
-      })
-      setTimeout(() => {
-        setNotification({
-          message:'',
-          style:''
+      phones.create(newPerson)
+        .then(newPerson => {
+          setPersons(persons.concat(newPerson))
+          setNotification({
+            message:`${newPerson.name} number was added`,
+            style: 'info'
+          })
+          setTimeout(() => {
+            setNotification({
+              message:'',
+              style:''
+            })
+          }, 5000)
         })
-      }, 5000)
+        .catch(error => {
+          console.log(error.response.data.error)
+          setNotification({
+            message:`${error.response.data.error}`,
+            style: 'error'
+          })
+          setTimeout(() => {
+            setNotification({
+              message:'',
+              style:''
+            })
+          }, 5000)
+        })
     }
     setNewName('')
     setNewNumber('')

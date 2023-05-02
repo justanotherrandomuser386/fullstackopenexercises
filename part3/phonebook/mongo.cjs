@@ -1,14 +1,14 @@
 const mongoose = require('mongoose')
 
 const password  = process.argv[2]
-const host      = process.argv[5] || '192.168.1.225:27017'
+const host      = process.argv[5] || '192.168.1.25:27017'
 const person    = process.argv[3]
 const number    = process.argv[4]
 const url = `mongodb://${host}/phonebook`
 
 mongoose.set('strictQuery',false)
-mongoose.connect(url)
-
+mongoose.connect(url).then(() => {
+console.log(`connected to ${url}`)
 const personSchema = new mongoose.Schema({
   person: String,
   number: String,
@@ -22,8 +22,8 @@ if (person === undefined) {
     result.forEach(person => {
       console.log(`${person.person} ${person.number}`)
     })
+    return mongoose.connection.close()  
   })
-  return mongoose.connection.close()
 } else {
   const newPerson = new Person({
     person,
@@ -34,3 +34,4 @@ if (person === undefined) {
     mongoose.connection.close()
   })
 }
+})
