@@ -45,21 +45,21 @@ app.post('/api/persons', (request, response, next) => {
     return response.status(400).json({ error: 'Name missing' })
   }
   if (!body.number) {
-    return response.status(400).json({ errror: 'Number missin' })
+    return response.status(400).json({ errror: 'Number missing' })
   }
 
   Person.countDocuments({ name: body.name }).then(count => {
     if (count === 1) {
       return response.status(400).json({ error: 'name must be unique' })
+    } else {
+      const person = new Person ({
+        name: body.name,
+        number: body.number,
+      })
+      person.save().then(() => {
+        response.json(person)
+      }).catch(error => next(error))
     }
-  }).then(() => {
-    const person = new Person ({
-      name: body.name,
-      number: body.number,
-    })
-    person.save().then(() => {
-      response.json(person)
-    }).catch(error => next(error))
   })
 })
 
@@ -69,7 +69,7 @@ app.put('/api/persons/:id', (request, response, next) => {
     return response.status(400).json({ error: 'Name missing' })
   }
   if (!body.number) {
-    return response.status(400).json({ errror: 'Number missin' })
+    return response.status(400).json({ errror: 'Number missing' })
   }
   const person = {
     name: body.name,
