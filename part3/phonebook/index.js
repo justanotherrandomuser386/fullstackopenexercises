@@ -8,11 +8,6 @@ app.use(express.static('dist'))
 app.use(express.json())
 morgan.token('data', (request, response) => {return JSON.stringify(request.body)})
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
-/*
-app.get('/api/persons', (request, response) => {
-  response.json(persons)
-})
-*/
 
 app.get('/api/persons', (request, response, next) => {
   Person.find({}).then(persons => {
@@ -22,11 +17,10 @@ app.get('/api/persons', (request, response, next) => {
 
 app.get('/api/info', (request, response) => {
   Person.find({}).then(persons => {
-    const timestamp = new Date() 
+    const timestamp = new Date()
     const size = persons.length
 
     response.end(`Phonebook has info for ${size} people\n\r${timestamp.toString()}`)
-    
   })
 })
 
@@ -37,8 +31,8 @@ app.get('/api/persons/:id', (request, response, next) => {
 })
 
 app.delete('/api/persons/:id', (request, response, next) => {
-  Person.deleteOne({_id:request.params.id}).then(result => {
-    if (result.deletedCount == 1) {
+  Person.deleteOne({ _id:request.params.id }).then(result => {
+    if (result.deletedCount === 1) {
       response.status(204).end()
     }
   }).catch(error => next(error))
@@ -48,16 +42,15 @@ app.post('/api/persons', (request, response, next) => {
   const body = request.body
 
   if (!body.name) {
-    return response.status(400).json({error: 'Name missing'})
+    return response.status(400).json({ error: 'Name missing' })
   }
-  
   if (!body.number) {
-    return response.status(400).json({errror: 'Number missin'})
+    return response.status(400).json({ errror: 'Number missin' })
   }
 
-  Person.countDocuments({name: body.name}).then(count => {
-    if (count == 1) {
-      return response.status(400).json({error: 'name must be unique'})
+  Person.countDocuments({ name: body.name }).then(count => {
+    if (count === 1) {
+      return response.status(400).json({ error: 'name must be unique' })
     }
   }).then(() => {
     const person = new Person ({
@@ -73,16 +66,16 @@ app.post('/api/persons', (request, response, next) => {
 app.put('/api/persons/:id', (request, response, next) => {
   const body = request.body
   if (!body.name) {
-    return response.status(400).json({error: 'Name missing'})
+    return response.status(400).json({ error: 'Name missing' })
   }
   if (!body.number) {
-    return response.status(400).json({errror: 'Number missin'})
+    return response.status(400).json({ errror: 'Number missin' })
   }
   const person = {
     name: body.name,
     number: body.number,
   }
-  Person.findByIdAndUpdate(request.params.id, person, {new: true, runValidators: true, context: 'query'}).
+  Person.findByIdAndUpdate(request.params.id, person, { new: true, runValidators: true, context: 'query' }).
     then(updatedPerson => {
       response.json(updatedPerson)
     }).
@@ -92,9 +85,9 @@ app.put('/api/persons/:id', (request, response, next) => {
 const errorHandler = (error, request, response, next) => {
   console.log(error)
   if (error.name === 'ValidationError') {
-    return response.status(400).json({error: error.message})
+    return response.status(400).json({ error: error.message })
   } else if (error.name === 'CastError') {
-    return response.status(400).send({error: 'malformed id'})
+    return response.status(400).send({ error: 'malformed id' })
   }
 }
 
