@@ -30,6 +30,87 @@ test('correct number of blogs returned', async () => {
   expect(blogs.length).toBe(helper.initialBlogs.length)
 })
 
+test('unique identifier of the blog is named id', async () => {
+  const blogs = await helper.blogsInDB()
+  console.log(blogs)
+  expect(blogs[0].id).toBeDefined()
+})
+
+test('unique identifier of the blog is not named _id', async () => {
+  const blogs = await helper.blogsInDB()
+  console.log(blogs)
+  expect(blogs[0]._id).not.toBeDefined()
+})
+
+test('new blog post can be added', async () => {
+    const newBlog = {
+        title: 'Go To Statement Considered Harmful',
+        author: 'Edsger W. Dijkstra',
+        url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
+        likes: 5,
+      }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    
+    const blogs = await helper.blogsInDB()
+    expect(blogs.length).toBe(helper.initialBlogs.length + 1)
+    expect(blogs.map(blog => blog.title)).toContain(newBlog.title)
+})
+
+test('likes propery is defaults to 0', async () => {
+    const newBlog = {
+        title: 'Go To Statement Considered Harmful',
+        author: 'Edsger W. Dijkstra',
+        url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
+      }
+    
+  await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    
+    const blogs = await helper.blogsInDB()
+    expect(blogs.length).toBe(helper.initialBlogs.length + 1)
+    expect(blogs.filter(blog => blog.title === newBlog.title)[0].likes).toBe(0)
+    
+})
+
+test('new blog post without title can\'t be added', async () => {
+    const newBlog = {
+        author: 'Edsger W. Dijkstra',
+        url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
+        likes: 5,
+      }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(400)
+    
+    const blogs = await helper.blogsInDB()
+    expect(blogs.length).toBe(helper.initialBlogs.length)
+})
+
+test('new blog post without url can\'t be added', async () => {
+    const newBlog = {
+        title: 'Go To Statement Considered Harmful',
+        author: 'Edsger W. Dijkstra',
+        likes: 5,
+      }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(400)
+
+    const blogs = await helper.blogsInDB()
+    expect(blogs.length).toBe(helper.initialBlogs.length)
+})
 afterAll(async () => {
   await mongoose.connection.close()
 })
