@@ -1,6 +1,6 @@
 const supertest = require('supertest')
 const mongoose = require('mongoose')
-const Blog = require('../model/blog') 
+const Blog = require('../models/blog') 
 const helper = require('./test_helper')
 
 const app = require('../app')
@@ -60,7 +60,7 @@ describe('adding blog posts', () => {
       expect(blogs.map(blog => blog.title)).toContain(newBlog.title)
   })
 
-  test('likes propery is defaults to 0', async () => {
+  test('likes property defaults to 0', async () => {
       const newBlog = {
           title: 'Go To Statement Considered Harmful',
           author: 'Edsger W. Dijkstra',
