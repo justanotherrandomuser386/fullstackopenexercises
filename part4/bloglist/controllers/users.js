@@ -1,17 +1,17 @@
 const usersRouter = require('express').Router()
 const User = require('../models/user')
 const bcrypt = require('bcrypt')
-
+require('dotenv').config()
 
 usersRouter.post('/', async (request, response, next) => {
   const { username, name, password } = request.body
-  console.log(request.body)
-  console.log(username, name, password)
+  //console.log(request.body)
+  //console.log(username, name, password)
   
-  if ( !password || password.length < process.env.MIN_PASSWORD_LENGTH) {
+  if ( !password || password.length < parseInt(process.env.MIN_PASSWORD_LENGTH)) {
 
-    response.status(400).json({
-      error: 'password to short'
+    return response.status(400).json({
+      error: 'password too short'
     })
   }
   try {
@@ -21,9 +21,10 @@ usersRouter.post('/', async (request, response, next) => {
       name,
       passwordHash
     })
-    console.log('post creation/pre save')
+    
+    //console.log(user)
     const result = await user.save()
-    console.log('post save')
+    //console.log(result)
     response.status(201).send(result)
 
   } catch(exception) {
@@ -33,7 +34,7 @@ usersRouter.post('/', async (request, response, next) => {
 })
 
 usersRouter.get('/', async (request, response, next) => {
-  const users = await User.find({})
+  const users = await User.find({}).populate('blogs')
   response.status(200).json(users)
 })
 

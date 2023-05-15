@@ -1,6 +1,7 @@
 const supertest = require('supertest')
 const mongoose = require('mongoose')
 const Blog = require('../models/blog') 
+const User = require('../models/user')
 const helper = require('./test_helper')
 
 const app = require('../app')
@@ -8,25 +9,44 @@ const api = supertest(app)
 
 beforeEach(async () => {
   await Blog.deleteMany({})
+  await User.deleteMany({})
 
-  for (let blog of helper.initialBlogs) {
-    let newBlog = Blog(blog)
-    await newBlog.save()
+  for (let user of helper.initialUsers) {
+    const result = await api
+      .post('/api/users')
+      .send(user)
   }
 
+  for (let blog of helper.initialBlogs) {
+    const user = helper.initialUsers[Math.floor(Math.random()*helper.initialUsers.length)]
+    const token = await api
+      .post('/api/login/')
+      .send(user)
+      .expect(200)
+    
+    await api
+      .post('/api/blogs')
+      .set({'Authorization': `Bearer ${token.body.token}`})
+      .send(blog)
+  }
 })
 
 test('blogs returned as json', async () => {
+    const token = await api
+      .post('/api/login/')
+      .send(helper.initialUsers[0])
+    console.log(token.body.token)
   await api
     .get('/api/blogs')
+    .set({'Authorization': `Bearer ${token.body.token}`})
     .expect(200)
     .expect('Content-Type', /application\/json/)
 })
 
 
 test('correct number of blogs returned', async () => {
-  const blogs = await helper.blogsInDB()
 
+  const blogs = await helper.blogsInDB()
   expect(blogs.length).toBe(helper.initialBlogs.length)
 })
 
@@ -48,9 +68,13 @@ describe('adding blog posts', () => {
           url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
           likes: 5,
         }
+      const token = await api
+        .post('/api/login/')
+        .send(helper.initialUsers[0])
 
       await api
         .post('/api/blogs')
+        .set({'Authorization': `Bearer ${token.body.token}`})
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -66,9 +90,13 @@ describe('adding blog posts', () => {
           author: 'Edsger W. Dijkstra',
           url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
         }
+    const token = await api
+      .post('/api/login/')
+      .send(helper.initialUsers[0])
       
     await api
         .post('/api/blogs')
+        .set({'Authorization': `Bearer ${token.body.token}`})
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -86,8 +114,13 @@ describe('adding blog posts', () => {
           likes: 5,
         }
 
+      const token = await api
+        .post('/api/login/')
+        .send(helper.initialUsers[0])
+      
       await api
         .post('/api/blogs')
+        .set({'Authorization': `Bearer ${token.body.token}`})
         .send(newBlog)
         .expect(400)
       
@@ -102,8 +135,13 @@ describe('adding blog posts', () => {
           likes: 5,
         }
 
+      const token = await api
+        .post('/api/login/')
+        .send(helper.initialUsers[0])
+      
       await api
         .post('/api/blogs')
+        .set({'Authorization': `Bearer ${token.body.token}`})
         .send(newBlog)
         .expect(400)
 
@@ -115,18 +153,27 @@ describe('adding blog posts', () => {
 
 describe('deleting blog posts', () => {
   test('deleting existing blog post', async () => {
+    
     const newBlog = {
         title: 'Go To Statement Considered Harmful',
         author: 'Edsger W. Dijkstra',
         url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
         likes: 5,
       }
-    const savedBlog = await api.post('/api/blogs').send(newBlog)
+    const token = await api
+      .post('/api/login/')
+      .send(helper.initialUsers[0])
+    
+    const savedBlog = await api
+      .post('/api/blogs')
+       .set({'Authorization': `Bearer ${token.body.token}`})
+      .send(newBlog)
     let blogsAfter = await helper.blogsInDB()
     expect(blogsAfter.length).toBe(helper.initialBlogs.length + 1)
 
     await api
       .delete(`/api/blogs/${savedBlog.body.id}`)
+      .set({'Authorization': `Bearer ${token.body.token}`})
       .expect(204)
 
     blogsAfter = await helper.blogsInDB()
@@ -134,24 +181,35 @@ describe('deleting blog posts', () => {
   })
 
   test('deleting blog post wich does not exist', async () => {
+    
     const newBlog = {
         title: 'Go To Statement Considered Harmful',
         author: 'Edsger W. Dijkstra',
         url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
         likes: 5,
       }
-    const savedBlog = await api.post('/api/blogs').send(newBlog)
+    const token = await api
+      .post('/api/login/')
+      .send(helper.initialUsers[0])
+    
+    const savedBlog = await api
+      .post('/api/blogs')
+       .set({'Authorization': `Bearer ${token.body.token}`})
+      .send(newBlog)
     let blogsAfter = await helper.blogsInDB()
     expect(blogsAfter.length).toBe(helper.initialBlogs.length + 1)
-    await api
-      .delete(`/api/blogs/${savedBlog.body.id}`)
-      .expect(204)
 
     await api
       .delete(`/api/blogs/${savedBlog.body.id}`)
+      .set({'Authorization': `Bearer ${token.body.token}`})
       .expect(204)
+    await api
+      .delete(`/api/blogs/${savedBlog.body.id}`)
+      .set({'Authorization': `Bearer ${token.body.token}`})
+
     blogsAfter = await helper.blogsInDB()
     expect(blogsAfter.length).toBe(helper.initialBlogs.length)
+  
   })
 })
 
@@ -164,14 +222,23 @@ describe('updating blog posts', () => {
         url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
         likes: 5,
       }
+    const token = await api
+      .post('/api/login/')
+      .send(helper.initialUsers[0])
     
-    const addedBlog = await api.post('/api/blogs').send(newBlog)
+    const addedBlog = await api
+      .post('/api/blogs')
+      .set({'Authorization': `Bearer ${token.body.token}`})
+      .send(newBlog)
     expect(addedBlog.body.url).toBe(newBlog.url)
 
     const editedBlog = {...newBlog}
     editedBlog.url = 'null'
 
-    const updatedBlog = await api.put(`/api/blogs/${addedBlog.body.id}`).send(editedBlog)
+    const updatedBlog = await api
+      .put(`/api/blogs/${addedBlog.body.id}`)
+      .set({'Authorization': `Bearer ${token.body.token}`})
+      .send(editedBlog)
     expect(updatedBlog.body.id).toBe(addedBlog.body.id)
     expect(updatedBlog.body.url).toBe(editedBlog.url)
   })
@@ -183,15 +250,25 @@ describe('updating blog posts', () => {
         url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
         likes: 5,
       }
+    const token = await api
+      .post('/api/login/')
+      .send(helper.initialUsers[0])
     
-    const addedBlog = await api.post('/api/blogs').send(newBlog)
+    const addedBlog = await api
+      .post('/api/blogs')
+      .set({'Authorization': `Bearer ${token.body.token}`})
+      .send(newBlog)
     expect(addedBlog.body.url).toBe(newBlog.url)
-    await api.delete(`/api/blogs/${addedBlog.body.id}`).expect(204)
+    await api
+      .delete(`/api/blogs/${addedBlog.body.id}`)
+      .set({'Authorization': `Bearer ${token.body.token}`})
+      .expect(204)
     const editedBlog = {...newBlog}
     editedBlog.url = 'null'
 
     await api
       .put(`/api/blogs/${addedBlog.body.id}`)
+      .set({'Authorization': `Bearer ${token.body.token}`})
       .send(editedBlog)
       .expect(404)
   })

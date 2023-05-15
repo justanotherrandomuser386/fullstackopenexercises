@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-
+require('dotenv').config()
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
     unique: true,
     minLength: parseInt(process.env.MIN_USERNAME_LENGTH),
     },
+  blogs: [{
+    type: mongoose.Types.ObjectId,
+    ref: 'Blog',
+  }],
   name: String,
   passwordHash: String
 })
