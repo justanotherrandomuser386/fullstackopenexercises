@@ -4,7 +4,7 @@ const User = require('../models/user')
 
 blogsRouter.get('/', async (request, response, next) => {
   try {
-    const blogs = await Blog.find({})
+    const blogs = await Blog.find({}).populate('user')
     response.json(blogs)
   } catch(exception) {
       next(exception)
@@ -68,8 +68,8 @@ blogsRouter.put('/:id', async (request, response, next) => {
     if (b === null) {
       response.status(404).end()
     }
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {new: true, runValidators: true, context: 'query'})
-    response.status(201).send(updatedBlog)
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {new: true, runValidators: true, context: 'query'}).populate('user')
+    response.status(201).json(updatedBlog)
   } catch(exception) {
     next(exception)
   }

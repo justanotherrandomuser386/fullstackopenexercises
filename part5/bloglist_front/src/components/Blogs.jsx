@@ -2,12 +2,76 @@ import { useState, useEffect, useRef } from 'react'
 import blogsService from '../services/blogs'
 import Togglable from './Togglable'
 
-const BlogEntry = ({ title, author, url, likes}) => {
-  return (
-    <div>
-      <p>Title: {title} Author: {author}</p>
-    </div>
-  )
+const BlogEntry = ({ token, blog, setBlogs}) => {
+  const [showFull, setShowFull] = useState(false)
+
+  const {title, url, author, likes, user, id} = blog
+  console.log(title, author, url, likes, user, id, token)
+  const handleViewModeChange = () => {
+    setShowFull(!showFull)
+  }
+  const hadleLike = () => {
+    blogsService
+      .updateBlog(token, blog)
+      .then((newBlog) => {
+        console.log('like updated!!!!', newBlog)
+        blogsService
+          .getBlogs(token)
+          .then(blogs => {
+            setBlogs(blogs)
+          })
+        })
+      }
+        
+  const handleRemove = () => {
+    if (window.confirm(`remove blogs.title?`)) {
+      blogsService
+        .removeBlog(token, blog.id)
+        .then(() => {
+                blogsService
+                  .getBlogs(token)
+                  .then(blogs => {
+                    setBlogs(blogs)
+                  })
+              })
+      }
+    }
+       
+  
+
+  const blogStyle = {
+    paddingTop: 10,
+    paddingLeft: 2,
+    border: 'solid',
+    borderWidth: 1,
+    marginBottom: 5
+  }
+
+  if (!showFull) {
+    return (
+      <div style={blogStyle}>
+        <p>Title: {title} Author: {author}</p>
+        <button onClick={handleViewModeChange}>show</button>
+      </div>
+    )
+
+  } else {
+    return (
+      <div style={blogStyle}>
+        <p>
+          Title: {title} Author: {author}
+          <button onClick={handleViewModeChange}>hide</button>
+        </p>
+        <p>{url}</p>
+        <p>likes {likes} <button onClick={hadleLike}>like</button></p>
+        <p>{user.username}</p>
+        <button onClick={handleRemove}>remove</button>
+      </div>
+    )
+
+
+  }
+  
 }
 
 const AddBlogForm = ({ token, blogs, setBlogs, setNotification }) => {
@@ -97,7 +161,7 @@ const Blogs = ({token, setNotification}) => {
       <h2>Blogs</h2>
       {blogs.length > 0 && blogs.map(blog => {
         return (
-          <BlogEntry title={blog.title} url={blog.url} author={blog.author} likes={blog.likes}/>
+          <BlogEntry token={token} blog={blog} setBlogs={setBlogs}/>
         )
       })}
 
