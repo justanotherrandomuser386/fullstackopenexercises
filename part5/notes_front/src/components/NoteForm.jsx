@@ -1,9 +1,9 @@
-import Togglable from "./Togglable"
+import Togglable from './Togglable'
 import { useState, forwardRef } from 'react'
 
 const NoteFrom = forwardRef(({ createNote }, refs) => {
   const [newNote, setNewNote] = useState('')
-  
+
   const handleNoteChange = (event) => {
     setNewNote(event.target.value)
   }
@@ -22,7 +22,7 @@ const NoteFrom = forwardRef(({ createNote }, refs) => {
     <Togglable buttonLabel='show add form' ref={refs}>
       <h2>Create a new note</h2>
       <form onSubmit={addNote}>
-        <input 
+        <input
           value={newNote}
           onChange={handleNoteChange}
         />

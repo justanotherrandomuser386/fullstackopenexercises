@@ -1,11 +1,8 @@
-import { useState } from "react"
-
 const Notification = ({ message, style, setNotification }) => {
   if (message === '') {
     return null
   }
-  setTimeout(()=>{
-    console.log('reset')
+  setTimeout(() => {
     setNotification({
       message:'',
       style:''
@@ -19,4 +16,4 @@ const Notification = ({ message, style, setNotification }) => {
   )
 }
 
-export default Notification 
+export default Notification

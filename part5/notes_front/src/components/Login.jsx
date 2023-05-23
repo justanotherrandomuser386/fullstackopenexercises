@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useState } from 'react'
 import loginService from '../services/login'
-import Togglable from "./Togglable"
+import Togglable from './Togglable'
+import PropTypes from 'prop-types'
 
 const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }) => {
   return (
@@ -8,10 +9,10 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
       <div>
         username
         <input
-         type="text"
-         value={username}
-         name="Username"
-         onChange={({ target }) => setUsername(target.value)}
+          type="text"
+          value={username}
+          name="Username"
+          onChange={({ target }) => setUsername(target.value)}
         />
       </div>
       <div>
@@ -28,6 +29,17 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
   )
 }
 
+LoginForm.propTypes = {
+  handleLogin: PropTypes.func.isRequired,
+  setUsername: PropTypes.func.isRequired,
+  setPassword: PropTypes.func.isRequired,
+  username: PropTypes.string.isRequired,
+  password: PropTypes.string.isRequired
+}
+
+
+
+
 const UserData = ({ user }) => {
   return (
     <div>
@@ -39,7 +51,7 @@ const UserData = ({ user }) => {
 const Login = ({ user, setUser, setNotification }) => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  
+
   const handleLogin = async (event) => {
     event.preventDefault()
     loginService
@@ -53,7 +65,7 @@ const Login = ({ user, setUser, setNotification }) => {
           message: `${user.name} logged in`,
           style: 'info'
         })
-        
+
       })
       .catch(exception => {
         console.log(exception)
@@ -68,7 +80,7 @@ const Login = ({ user, setUser, setNotification }) => {
   console.log('Login component')
   if (user === null) {
     return (
-      <Togglable buttonLabel='show login' >  
+      <Togglable buttonLabel='show login' >
         <LoginForm username={username} setUsername={setUsername} password={password} setPassword={setPassword} handleLogin={handleLogin}/>
       </Togglable>
     )
@@ -79,5 +91,6 @@ const Login = ({ user, setUser, setNotification }) => {
     </div>
   )
 }
+
 
 export default Login

@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useState } from 'react'
 import loginService from '../services/login'
-import Togglable from "./Togglable"
+import Togglable from './Togglable'
 
 
 const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }) => {
@@ -9,10 +9,10 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
       <div>
         username
         <input
-         type="text"
-         value={username}
-         name="Username"
-         onChange={({ target }) => setUsername(target.value)}
+          type="text"
+          value={username}
+          name="Username"
+          onChange={({ target }) => setUsername(target.value)}
         />
       </div>
       <div>
@@ -59,7 +59,6 @@ const Login = ({ user, setUser, setNotification }) => {
         })
       })
       .catch(exception => {
-        console.log(exception)
         setNotification({
           message: `${exception.response.data.error}`,
           style: 'error'
@@ -71,7 +70,7 @@ const Login = ({ user, setUser, setNotification }) => {
 
   if (user === '') {
     return (
-      <Togglable buttonLabel='show login'>  
+      <Togglable buttonLabel='show login'>
         <LoginForm username={username} setUsername={setUsername} password={password} setPassword={setPassword} handleLogin={handleLogin}/>
       </Togglable>
     )

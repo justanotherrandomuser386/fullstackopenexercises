@@ -18,7 +18,7 @@ const App = (props) => {
 
   useEffect(() => {
     noteService.getAll()
-    .then(initialNotes => {
+      .then(initialNotes => {
         setNotes(initialNotes)
       })
   }
@@ -40,17 +40,17 @@ const App = (props) => {
 
   const toggleImportanceOf = (id) => {
     const note = notes.find(n => n.id === id)
-    const changedNote = {...note, important: !note.important }
+    const changedNote = { ...note, important: !note.important }
 
     noteService
       .update(id, changedNote)
       .then(returnedNote => {
         setNotes(notes.map(note => note.id !== id ? note : returnedNote))
       }).catch(error => {
-          setNotification({
-            message:`Note '${note.content}' was already removed from server`,
-            style: 'error'
-          })
+        setNotification({
+          message:`Note '${note.content}' was already removed from server`,
+          style: 'error'
+        })
         setNotes(notes.filter(n => n.id !== id))
       })
   }
@@ -63,7 +63,7 @@ const App = (props) => {
         setNotes(notes.concat(returnedNote))
       })
   }
-  
+
   return (
     <div>
       <h1>Notes</h1>
@@ -75,9 +75,9 @@ const App = (props) => {
         <button onClick={() => setShowAll(!showAll)}>
           show {showAll ? 'important' : 'all' }
         </button>
-      </div> 
+      </div>
       <ul>
-        {notesToShow.map(note => 
+        {notesToShow.map(note =>
           <Note key={note.id} note={note} toggleImportance={() => toggleImportanceOf(note.id)}/>
         )}
       </ul>
