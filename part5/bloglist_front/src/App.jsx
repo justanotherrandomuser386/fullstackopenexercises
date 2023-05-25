@@ -9,14 +9,14 @@ function App() {
     message: '',
     style: '',
   })
-  
+
   return (
     <div>
       <Notification message={notification.message} style={notification.style} setNotification={setNotification}/>
-      
+
       {console.log(user)}
       <Login user={user} setUser={setUser} setNotification={setNotification}/>
-      <Blogs token={user !==  '' ? user.token : ''} setNotification={setNotification}/>
+      <Blogs.Blogs token={user !==  '' ? user.token : ''} setNotification={setNotification}/>
     </div>
   )
 }

@@ -2,24 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import blogsService from '../services/blogs'
 import Togglable from './Togglable'
 
-const BlogEntry = ({ token, blog, setBlogs }) => {
+const BlogEntry = ({ token, blog, setBlogs, handleLike }) => {
   const [showFull, setShowFull] = useState(false)
 
   const { title, url, author, likes, user, id } = blog
   const handleViewModeChange = () => {
     setShowFull(!showFull)
   }
-  const hadleLike = () => {
-    blogsService
-      .updateBlog(token, blog)
-      .then(() => {
-        blogsService
-          .getBlogs(token)
-          .then(blogs => {
-            setBlogs(blogs)
-          })
-      })
-  }
+
 
   const handleRemove = () => {
     if (window.confirm('remove blogs.title?')) {
@@ -34,9 +24,7 @@ const BlogEntry = ({ token, blog, setBlogs }) => {
         })
     }
   }
-
-
-
+ 
   const blogStyle = {
     paddingTop: 10,
     paddingLeft: 2,
@@ -48,28 +36,29 @@ const BlogEntry = ({ token, blog, setBlogs }) => {
   if (!showFull) {
     return (
       <div style={blogStyle}>
-        <p>Title: {title} Author: {author}</p>
-        <button onClick={handleViewModeChange}>show</button>
+        <p className='title'>Title: {title}</p>
+        <p className='author'>Author: {author}</p>
+        <button className='showAllButton' onClick={handleViewModeChange}>show</button>
       </div>
     )
 
   } else {
     return (
-      <div style={blogStyle}>
-        <p>
-          Title: {title} Author: {author}
-          <button onClick={handleViewModeChange}>hide</button>
-        </p>
-        <p>{url}</p>
-        <p>likes {likes} <button onClick={hadleLike}>like</button></p>
-        <p>{user.username}</p>
+      <div style={blogStyle} className='blogEntry'>
+        <p className='title'>Title: {title}</p>
+        <p className='author'>Author: {author}</p>  
+          <button className='showAllButton' onClick={handleViewModeChange}>hide</button>
+        
+        <p className='url'>{url}</p>
+        <p>likes {likes} <button className='likes' onClick={() => handleLike(blog)}>like</button></p>
+        <p className='user'>{user.username}</p>
         <button onClick={handleRemove}>remove</button>
       </div>
     )
   }
 }
 
-const AddBlogForm = ({ token, blogs, setBlogs, setNotification }) => {
+const AddBlogForm = ({ token, blogs, setBlogs, setNotification, handleCreateBlog }) => {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [url, setUrl] = useState('')
@@ -77,7 +66,61 @@ const AddBlogForm = ({ token, blogs, setBlogs, setNotification }) => {
 
   if (token === '') return null
 
-  const handleCreateBlog = (event) => {
+  return (
+    <Togglable buttonLabel='add blog' ref={addBlogFormRef}>
+      <form onSubmit={(event) => handleCreateBlog(event, title, author, url, blogs, setTitle, setAuthor, setUrl, setBlogs, setNotification, addBlogFormRef)}>
+        <div>
+        title:
+          <input
+            type='text'
+            value={title}
+            name='Title'
+            onChange={({ target }) => setTitle(target.value)}/>
+        </div>
+        <div>
+        author:
+          <input
+            type='text'
+            value={author}
+            name='Author'
+            onChange={({ target }) => setAuthor(target.value)}/>
+        </div>
+        <div>
+        url:
+          <input
+            type='text'
+            value={url}
+            name='url'
+            onChange={({ target }) => setUrl(target.value)}/>
+        </div>
+        <button type='submit' className='createBlog'>create</button>
+      </form>
+    </Togglable>
+  )
+}
+
+const Blogs = ({ token, setNotification }) => {
+  const [blogs, setBlogs] = useState([])
+
+  useEffect(() => {blogsService
+    .getBlogs(token)
+    .then(blogs => {
+      setBlogs(blogs)
+    })}, [token])
+
+  const handleLike = (blog) => {
+    blogsService
+      .updateBlog(token, blog)
+      .then(() => {
+        blogsService
+          .getBlogs(token)
+          .then(blogs => {
+            setBlogs(blogs)
+          })
+      })
+  }
+
+  const handleCreateBlog = (event, title, author, url, blogs, setTitle, setAuthor, setUrl, setBlogs, setNotification, addBlogFormRef) => {
     event.preventDefault()
     blogsService
       .addBlog(token, {
@@ -105,55 +148,16 @@ const AddBlogForm = ({ token, blogs, setBlogs, setNotification }) => {
       })
   }
 
-  return (
-    <Togglable buttonLabel='add blog' ref={addBlogFormRef}>
-      <form onSubmit={handleCreateBlog}>
-        <div>
-        title:
-          <input
-            type='text'
-            value={title}
-            name='Title'
-            onChange={({ target }) => setTitle(target.value)}/>
-        </div>
-        <div>
-        author:
-          <input
-            type='text'
-            value={author}
-            name='Author'
-            onChange={({ target }) => setAuthor(target.value)}/>
-        </div>
-        <div>
-        url:
-          <input
-            type='text'
-            value={url}
-            name='url'
-            onChange={({ target }) => setUrl(target.value)}/>
-        </div>
-        <button type='submit'>create</button>
-      </form>
-    </Togglable>
-  )
-}
 
-const Blogs = ({ token, setNotification }) => {
-  const [blogs, setBlogs] = useState([])
-
-  useEffect(() => {blogsService
-    .getBlogs(token)
-    .then(blogs => {
-      setBlogs(blogs)
-    })}, [token])
+  
 
   return (
     <div>
-      <AddBlogForm token={token} blogs={blogs} setBlogs={setBlogs} setNotification={setNotification}/>
+      <AddBlogForm token={token} blogs={blogs} setBlogs={setBlogs} setNotification={setNotification} handleCreateBlog={handleCreateBlog}/>
       <h2>Blogs</h2>
       {blogs.length > 0 && blogs.map(blog => {
         return (
-          <BlogEntry key={blog.id} token={token} blog={blog} setBlogs={setBlogs}/>
+          <BlogEntry key={blog.id} token={token} blog={blog} setBlogs={setBlogs} handleLike={handleLike}/>
         )
       })}
 
@@ -162,4 +166,8 @@ const Blogs = ({ token, setNotification }) => {
 
 }
 
-export default Blogs
+export default {
+  Blogs, 
+  BlogEntry,
+  AddBlogForm,
+}
