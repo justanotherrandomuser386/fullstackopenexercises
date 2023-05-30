@@ -16,7 +16,7 @@ function App() {
 
       {console.log(user)}
       <Login user={user} setUser={setUser} setNotification={setNotification}/>
-      <Blogs.Blogs token={user !==  '' ? user.token : ''} setNotification={setNotification}/>
+      <Blogs.Blogs token={user !==  '' ? user.token : ''} setNotification={setNotification} user={user}/>
     </div>
   )
 }

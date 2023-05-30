@@ -1,6 +1,0 @@
-{
-  "devDependencies": {
-    "@testing-library/react": "^14.0.0",
-    "jsdom": "^22.0.0"
-  }
-}

@@ -24,15 +24,15 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
           onChange={({ target }) => setPassword(target.value)}
         />
       </div>
-      <button type="submit">login</button>
+      <button id='login' type="submit">login</button>
     </form>
   )
 }
 
-const UserData = ({ user }) => {
+const UserData = ({ user, setUser }) => {
   return (
     <div>
-      {`${user.name} logged in`}
+      {`${user.name} logged in`}<button id='logout' onClick={() => setUser('')}>logout</button>
     </div>
   )
 }
@@ -70,14 +70,14 @@ const Login = ({ user, setUser, setNotification }) => {
 
   if (user === '') {
     return (
-      <Togglable buttonLabel='show login'>
+      <Togglable buttonLabel='show login' buttonId = 'showLogin'>
         <LoginForm username={username} setUsername={setUsername} password={password} setPassword={setPassword} handleLogin={handleLogin}/>
       </Togglable>
     )
   }
   return (
     <div>
-      <UserData user={user}/>
+      <UserData user={user} setUser={setUser}/>
     </div>
   )
 }
