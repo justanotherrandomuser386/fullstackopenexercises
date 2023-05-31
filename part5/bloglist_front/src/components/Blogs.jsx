@@ -54,7 +54,7 @@ const BlogEntry = ({ token, blog, setBlogs, handleLike, setNotification, user })
     console.log('user: ',user)
     console.log('bUser: ', bUser)
     return (
-      <div className='blogEntry' style={blogStyle} className='blogEntry'>
+      <div  style={blogStyle} className='blogEntry'>
         <p id='entryTitle' className='title'>Title: {title}</p>
         <p id='entryAuthor' className='author'>Author: {author}</p>  
           <button id='entryHide' className='showAllButton' onClick={handleViewModeChange}>hide</button>
