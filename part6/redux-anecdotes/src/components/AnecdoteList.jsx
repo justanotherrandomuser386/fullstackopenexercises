@@ -9,7 +9,15 @@ const AnecdoteList = () => {
   }
 
 
-  const anecdotes = useSelector(state => state)
+  const anecdotes = useSelector(({ anecdotes, filter }) => {
+    if (filter === '') {
+      return anecdotes
+    }
+    return anecdotes.filter(a => {
+      return a.content.startsWith(filter)
+    })
+  })
+
   const dispatch = useDispatch()
   return (<div>  
     {anecdotes.sort((a, b) => b.votes - a.votes).map(anecdote =>
