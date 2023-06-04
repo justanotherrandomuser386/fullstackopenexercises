@@ -9,5 +9,5 @@ const store = configureStore({
     filter: filterReducer
   }
 })
-
+console.log('create store')
 export default store
