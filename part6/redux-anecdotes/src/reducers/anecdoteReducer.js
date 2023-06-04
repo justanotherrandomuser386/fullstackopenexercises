@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { setNotification } from './notificationReducer'
 
 const anecdotesAtStart = [
   'If it hurts, do it more often',
@@ -20,7 +21,6 @@ const asObject = (anecdote) => {
 }
 
 const initialState = anecdotesAtStart.map(asObject)
-
 
 const anecdoteSlice = createSlice({
   name: 'anecdotes',
