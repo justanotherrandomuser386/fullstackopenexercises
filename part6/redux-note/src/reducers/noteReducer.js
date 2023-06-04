@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit"
+import axios from "axios"
 
 const initialState = [
     { content: 'reducer defines how redux store works', important: true, id: 1},
@@ -29,15 +30,10 @@ const generateId = () =>
 
 const noteSlice = createSlice({
   name: 'notes',
-  initialState, 
+  initialState: [], 
   reducers: {
     createNote(state, action) {
-      const content = action.payload
-      state.push({
-        content,
-        important: false, 
-        id: generateId()
-      })
+      return [...state, action.payload]
     },
     toggleImportanceOf(state, action) {
       const id = action.payload
@@ -48,9 +44,21 @@ const noteSlice = createSlice({
       }
       console.log('FROM_createSlise', state)
       return state.map(note => note.id !== id ? note : changedNote)
+    },
+    appendNote(state, action) {
+      return [...state, action.payload]
+    },
+    setNotes(state, action) {
+      return action.payload
     }
+
   }
 })
 
 export default noteSlice.reducer
-export const { createNote, toggleImportanceOf } = noteSlice.actions
+export const { 
+  createNote,
+  toggleImportanceOf,
+  appendNote,
+  setNotes
+} = noteSlice.actions
