@@ -3,9 +3,9 @@ import { createAnecdote,  voteAnecdote } from '../reducers/anecdoteReducer'
 import { setNotification } from '../reducers/notificationReducer'
 const AnecdoteList = () => {
 
-  const vote = (id) => {
-    console.log('VOTE', id)
-    dispatch(voteAnecdote(id))
+  const vote = (anecdote) => {
+    console.log('VOTE', anecdote)
+    dispatch(voteAnecdote(anecdote))
   }
 
 
@@ -30,7 +30,7 @@ const AnecdoteList = () => {
           has {anecdote.votes}
           <button onClick={() => {
               dispatch(setNotification(`You voted for a '${anecdote.content}'`))
-              vote(anecdote.id)
+              vote(anecdote)
           }}>vote</button>
         </div>
       </div>
