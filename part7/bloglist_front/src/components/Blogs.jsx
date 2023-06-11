@@ -4,20 +4,21 @@ import Togglable from './Togglable'
 import NotificationContext from '../NotificationContext'
 import UserContext from '../UserContext'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
+import blogs from '../services/blogs'
+import { Link, useParams } from 'react-router-dom'
 
-
-const BlogEntry = ({ token, blog, setBlogs, handleLike, handleRemove, user }) => {
-  const [showFull, setShowFull] = useState(false)
+const BlogEntry = ({ handleLike, handleRemove }) => {
+  const [user, userDispatch] = useContext(UserContext)
   const [notification, notificationDispatch] = useContext(NotificationContext)
+  const queryClient = useQueryClient()
+  
+  const id = useParams().id
+  const blog = queryClient.getQueryData('blogs').filter(b => b.id === id)[0] 
+  console.log('Blog entry', blog, id)
 
-  const { title, url, author, likes, id } = blog
+  const { title, url, author, likes } = blog
   const bUser = blog.user
-  const handleViewModeChange = () => {
-    setShowFull(!showFull)
-  }
 
-
- 
   const blogStyle = {
     paddingTop: 10,
     paddingLeft: 2,
@@ -26,25 +27,12 @@ const BlogEntry = ({ token, blog, setBlogs, handleLike, handleRemove, user }) =>
     marginBottom: 5
   }
 
-  if (!showFull) {
-    return (
-      <div className='blogEntry' style={blogStyle}>
-        <p className='title'>Title: {title}</p>
-        <p className='author'>Author: {author}</p>
-        <p id='entryLikes'>likes {likes}</p>
-        <button id='entryShow' className='showAllButton' onClick={handleViewModeChange}>show</button>
-      </div>
-    )
-
-  } else {
     console.log('user: ',user)
     console.log('bUser: ', bUser)
     return (
       <div  style={blogStyle} className='blogEntry'>
         <p id='entryTitle' className='title'>Title: {title}</p>
         <p id='entryAuthor' className='author'>Author: {author}</p>  
-          <button id='entryHide' className='showAllButton' onClick={handleViewModeChange}>hide</button>
-        
         <p id='entryUrl' className='url'>{url}</p>
         <p id='entryLikes'>likes {likes} <button id='likeButton' className='likes' onClick={() => handleLike(blog)}>like</button></p>
         <p id='user' className='user'>{bUser.username}</p>
@@ -54,7 +42,6 @@ const BlogEntry = ({ token, blog, setBlogs, handleLike, handleRemove, user }) =>
         }
       </div>
     )
-  }
 }
 
 const AddBlogForm = ({ token, blogs, setBlogs, handleCreateBlog }) => {
@@ -195,12 +182,13 @@ const Blogs = () => {
     <div>
       <AddBlogForm token={token} blogs={blogs} setBlogs={setBlogs} handleCreateBlog={handleCreateBlog}/>
       <h2>Blogs</h2>
+      <li>
       {blogs.length > 0 && blogs.map(blog => {
         return (
-          <BlogEntry key={blog.id} token={token} blog={blog} setBlogs={setBlogs} handleRemove={handleRemove} handleLike={handleLike} user={user}/>
+          <ul><Link to={`/blogs/${blog.id}`}>{blog.title}</Link></ul>
         )
       })}
-
+      </li>
     </div>
   )
 

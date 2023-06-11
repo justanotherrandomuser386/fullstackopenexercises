@@ -42,6 +42,7 @@ function App() {
             <Route path='/users' element={<Users />}/>
             <Route path='/blogs' element={<Blogs.Blogs />}/>
             <Route path='/users/:id' element={<User />}/>
+            <Route path='/blogs/:id' element={<Blogs.BlogEntry />}/>
           </Routes>
         </NotificationContext.Provider>
       </UserContextProvider>
