@@ -3,9 +3,9 @@ import Login from './components/Login'
 import Blogs from './components/Blogs'
 import Notification from './components/Notification'
 import NotificationContext from './NotificationContext'
+import { UserContextProvider } from './UserContext'
 import './main.css'
 function App() {
-  const [user, setUser] = useState('')
   
   const noificationReducer = (state, action) => {
     switch (action.type) {
@@ -16,21 +16,22 @@ function App() {
     }
   }
 
-  const innitalState = {
+  const notificationInitialState = {
     message: '',
     style: '',
   }
   
-  const [notification, notificationDispatch] = useReducer(noificationReducer, innitalState)
+  const [notification, notificationDispatch] = useReducer(noificationReducer, notificationInitialState)
 
   
   return (
+    <UserContextProvider>
     <NotificationContext.Provider value={[notification, notificationDispatch]}>
       <Notification />
-      {console.log(user)}
-      <Login user={user} setUser={setUser}/>
-      <Blogs.Blogs token={user !==  '' ? user.token : ''} user={user}/>
+      <Login />
+      <Blogs.Blogs />
     </NotificationContext.Provider>
+    </UserContextProvider>
   )
 }
 

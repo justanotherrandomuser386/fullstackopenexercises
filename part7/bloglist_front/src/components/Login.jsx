@@ -2,6 +2,7 @@ import { useState, useContext } from 'react'
 import loginService from '../services/login'
 import Togglable from './Togglable'
 import NotificationContext from '../NotificationContext'
+import UserContext from '../UserContext'
 
 const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }) => {
   return (
@@ -29,19 +30,20 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
   )
 }
 
-const UserData = ({ user, setUser }) => {
+const UserData = ({ user, userDispatch }) => {
   return (
     <div>
-      {`${user.name} logged in`}<button id='logout' onClick={() => setUser('')}>logout</button>
+      {`${user.name} logged in`}<button id='logout' onClick={() => userDispatch({ type:'LOGOUT' })}>logout</button>
     </div>
   )
 }
 
 
-const Login = ({ user, setUser }) => {
+const Login = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loginVisible, setLoginVisible] = useState(false)
+  const [user, userDispatch] = useContext(UserContext)
   const [notification, notificationDispatch] = useContext(NotificationContext)
 
   const handleLogin = async (event) => {
@@ -52,7 +54,10 @@ const Login = ({ user, setUser }) => {
         password
       })
       .then(user => {
-        setUser(user)
+        userDispatch({
+          type:'SET',
+          payload: user
+        })
         notificationDispatch({
           type: 'NOTIFY',
           payload:{
@@ -81,7 +86,7 @@ const Login = ({ user, setUser }) => {
   }
   return (
     <div>
-      <UserData user={user} setUser={setUser}/>
+      <UserData user={user} userDispatch={userDispatch}/>
     </div>
   )
 }

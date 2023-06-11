@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useContext } from 'react'
 import blogsService from '../services/blogs'
 import Togglable from './Togglable'
 import NotificationContext from '../NotificationContext'
+import UserContext from '../UserContext'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
+
 
 const BlogEntry = ({ token, blog, setBlogs, handleLike, handleRemove, user }) => {
   const [showFull, setShowFull] = useState(false)
@@ -100,11 +102,13 @@ const AddBlogForm = ({ token, blogs, setBlogs, handleCreateBlog }) => {
   )
 }
 
-const Blogs = ({ token, user }) => {
+const Blogs = () => {
   
-
+  const [user, userDispatch] = useContext(UserContext)
   const [notification, notificationDispatch] = useContext(NotificationContext)
+  const token = user !==  '' ? user.token : ''  
   const queryClient = useQueryClient()
+
   const newBlogMutation = useMutation(blogsService.addBlog, {
     onSuccess: (newBlog) => {
       const blogs = queryClient.getQueryData('blogs')
@@ -115,21 +119,20 @@ const Blogs = ({ token, user }) => {
       })
     }
   })
+
   const updateBlogMutation = useMutation(blogsService.updateBlog, {
     onSuccess: (updatedBlog) => {
       const blogs = queryClient.getQueryData('blogs')
-      queryClient.setQueryData('blogs', blogs.concat(updatedBlog))
+      queryClient.setQueryData('blogs', blogs.filter(blog => blog.id === updatedBlog.id ? updatedBlog : blog))
       notificationDispatch({
         type:'NOTIFY', 
         payload: `blog ${updatedBlog.title} voted`
       })
-
     }
   })
-  const removeBlogMutation = useMutation(blogsService.removeBlog, {
-    onSuccess: () => {
 
-    },
+  const removeBlogMutation = useMutation(blogsService.removeBlog, {
+    onSuccess: () => {},
     onError: (error) => {
       notificationDispatch({type: 'NOTIFY', 
       payload:{
