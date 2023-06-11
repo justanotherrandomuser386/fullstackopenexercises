@@ -5,6 +5,10 @@ import Notification from './components/Notification'
 import NotificationContext from './NotificationContext'
 import { UserContextProvider } from './UserContext'
 import './main.css'
+import Users from './components/Users'
+import User from './components/User'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+
 function App() {
   
   const noificationReducer = (state, action) => {
@@ -25,13 +29,23 @@ function App() {
 
   
   return (
-    <UserContextProvider>
-    <NotificationContext.Provider value={[notification, notificationDispatch]}>
-      <Notification />
-      <Login />
-      <Blogs.Blogs />
-    </NotificationContext.Provider>
-    </UserContextProvider>
+    <BrowserRouter>
+      <UserContextProvider>
+        <NotificationContext.Provider value={[notification, notificationDispatch]}>
+          <Notification />       
+          <div>
+            <Link to='/users'>users</Link>
+            <Link to='/blogs'>blogs</Link>
+          </div>
+          <Login />
+          <Routes>
+            <Route path='/users' element={<Users />}/>
+            <Route path='/blogs' element={<Blogs.Blogs />}/>
+            <Route path='/users/:id' element={<User />}/>
+          </Routes>
+        </NotificationContext.Provider>
+      </UserContextProvider>
+    </BrowserRouter>
   )
 }
 
