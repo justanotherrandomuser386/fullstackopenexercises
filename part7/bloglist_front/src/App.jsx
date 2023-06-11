@@ -20,11 +20,10 @@ function App() {
     message: '',
     style: '',
   }
-
+  
   const [notification, notificationDispatch] = useReducer(noificationReducer, innitalState)
 
-
-
+  
   return (
     <NotificationContext.Provider value={[notification, notificationDispatch]}>
       <Notification />

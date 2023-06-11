@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useContext } from 'react'
 import blogsService from '../services/blogs'
 import Togglable from './Togglable'
 import NotificationContext from '../NotificationContext'
+import { useQuery, useMutation, useQueryClient } from 'react-query'
 
-const BlogEntry = ({ token, blog, setBlogs, handleLike, user }) => {
+const BlogEntry = ({ token, blog, setBlogs, handleLike, handleRemove, user }) => {
   const [showFull, setShowFull] = useState(false)
   const [notification, notificationDispatch] = useContext(NotificationContext)
 
@@ -14,26 +15,6 @@ const BlogEntry = ({ token, blog, setBlogs, handleLike, user }) => {
   }
 
 
-  const handleRemove = () => {
-    if (window.confirm('remove blogs.title?')) {
-      blogsService
-        .removeBlog(token, blog.id)
-        .then(() => {
-          blogsService
-            .getBlogs(token)
-            .then(blogs => {
-              setBlogs(blogs)
-            })
-        })
-        .catch(exception => {
-          notificationDispatch({type: 'NOTIFY', 
-          payload:{
-          message: `${exception.response.data.error}`,
-          style: 'error'
-        }})
-      })
-    }
-  }
  
   const blogStyle = {
     paddingTop: 10,
@@ -66,7 +47,7 @@ const BlogEntry = ({ token, blog, setBlogs, handleLike, user }) => {
         <p id='entryLikes'>likes {likes} <button id='likeButton' className='likes' onClick={() => handleLike(blog)}>like</button></p>
         <p id='user' className='user'>{bUser.username}</p>
         { user.username === bUser.username
-            ? <button id="removeButton" onClick={handleRemove}>remove</button>
+            ? <button id="removeButton" onClick={() => handleRemove(blog)}>remove</button>
             : <></>
         }
       </div>
@@ -120,67 +101,100 @@ const AddBlogForm = ({ token, blogs, setBlogs, handleCreateBlog }) => {
 }
 
 const Blogs = ({ token, user }) => {
-  const [blogs, setBlogs] = useState([])
+  
+
   const [notification, notificationDispatch] = useContext(NotificationContext)
-  useEffect(() => {blogsService
-    .getBlogs(token)
-    .then(blogs => {
-      setBlogs(blogs)
-    })}, [token])
-
-  const handleLike = (blog) => {
-    blogsService
-      .updateBlog(token, blog)
-      .then(() => {
-        blogsService
-          .getBlogs(token)
-          .then(blogs => {
-            setBlogs(blogs)
-          })
+  const queryClient = useQueryClient()
+  const newBlogMutation = useMutation(blogsService.addBlog, {
+    onSuccess: (newBlog) => {
+      const blogs = queryClient.getQueryData('blogs')
+      queryClient.setQueryData('blogs', blogs.concat(newBlog))
+      notificationDispatch({
+        type:'NOTIFY', 
+        payload: `blog ${newBlog.title} added`
       })
-  }
+    }
+  })
+  const updateBlogMutation = useMutation(blogsService.updateBlog, {
+    onSuccess: (updatedBlog) => {
+      const blogs = queryClient.getQueryData('blogs')
+      queryClient.setQueryData('blogs', blogs.concat(updatedBlog))
+      notificationDispatch({
+        type:'NOTIFY', 
+        payload: `blog ${updatedBlog.title} voted`
+      })
 
+    }
+  })
+  const removeBlogMutation = useMutation(blogsService.removeBlog, {
+    onSuccess: () => {
+
+    },
+    onError: (error) => {
+      notificationDispatch({type: 'NOTIFY', 
+      payload:{
+      message: `${error.response.data.error}`,
+      style: 'error'
+    }})
+
+    }
+  })
+
+  if (token === undefined)
+  {
+    return <div>login first</div>
+  }
+  
+  blogsService.setToken(token)
+  const blogsQ = useQuery(
+    'blogs',
+    () => blogsService.getBlogs()
+  )
+  
+  if (blogsQ.isLoading) {
+    return <div>loading</div>  
+  }
+  
   const handleCreateBlog = (event, title, author, url, blogs, setTitle, setAuthor, setUrl, setBlogs, notificationDispatch, addBlogFormRef) => {
     event.preventDefault()
-    blogsService
-      .addBlog(token, {
-        title,
-        author,
-        url
-      })
-      .then((newBlog) => {
-        setTitle('')
-        setAuthor('')
-        setUrl('')
-        setBlogs(blogs.concat(newBlog))
-        notificationDispatch({type:'NOTIFY', 
-          payload:{
-          message: `${newBlog.title} added`,
-          style: 'info'
-        }})
-        addBlogFormRef.current.toggleVisibility()
-
-      })
-      .catch(exception => {
-        notificationDispatch({type:'NOTIFY',
-          payload:{
-          message: `${exception.response.data.error}`,
-          style: 'error'
-        }})
-      })
+    const newBlog = {
+      title,
+      author,
+      url,
+      likes:0
+    }
+    setTitle('')
+    setAuthor('')
+    setUrl('')
+    addBlogFormRef.current.toggleVisibility()
+    newBlogMutation.mutate(newBlog)
   }
 
-
+  const handleLike = (blog) => {
+    updateBlogMutation.mutate(blog)
+  }
   
+  const handleRemove = (blog) => {
+    if (window.confirm('remove blogs.title?')) {
+      console.log('handleRemove', blog)
+      removeBlogMutation.mutate(blog.id)    
+  
+    }
+  }
+
+  const blogs = blogsQ.data
+
+  console.log('post blogQ', blogsQ)
+  const setBlogs = () => {} 
+  console.log('pre return ') 
 
   return (
     <div>
       <AddBlogForm token={token} blogs={blogs} setBlogs={setBlogs} handleCreateBlog={handleCreateBlog}/>
       <h2>Blogs</h2>
       {blogs.length > 0 && blogs.map(blog => {
-        console.log('listing blogs ', blog)
         return (
-          <BlogEntry key={blog.id} token={token} blog={blog} setBlogs={setBlogs} handleLike={handleLike} user={user}/>
+          <BlogEntry key={blog.id} token={token} blog={blog} setBlogs={setBlogs} handleRemove={handleRemove} handleLike={handleLike} user={user}/>
         )
       })}
 
