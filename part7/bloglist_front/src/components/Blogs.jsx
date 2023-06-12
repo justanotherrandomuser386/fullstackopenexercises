@@ -3,9 +3,45 @@ import blogsService from '../services/blogs'
 import Togglable from './Togglable'
 import NotificationContext from '../NotificationContext'
 import UserContext from '../UserContext'
-import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useQuery, useMutation, useQueryClient, QueryClient } from 'react-query'
 import blogs from '../services/blogs'
 import { Link, useParams } from 'react-router-dom'
+
+const AddCommentForm = ({id}) => {
+  const [comment, setComment] = useState('')
+  const queryClient = useQueryClient()
+  const [notification, notificationDispatch] = useContext(NotificationContext)
+  const newCommentMutation = useMutation(blogsService.addComment, {
+    onSuccess: (updatedBlog) => {
+      console.log('updateBlog', updatedBlog)
+      const blogs = queryClient.getQueryData('blogs')
+      queryClient.setQueryData('blogs', blogs.map(blog => blog.id === updatedBlog.id ? updatedBlog : blog))
+      notificationDispatch({
+        type:'NOTIFY', 
+        payload: `comment '${comment}' to  blog '${updatedBlog.title}' added`
+      })
+    }
+  })
+
+  const handleCreateComment = (event) => {
+    event.preventDefault()
+    console.log('handleCreateComment', id, comment)
+    newCommentMutation.mutate({id, comment})
+    setComment('')
+  }
+
+  return (
+    <form onSubmit={(event) => handleCreateComment(event)}>
+      <input
+        id='comment'
+        type = 'text'
+        value = {comment}
+        name = 'comment'
+        onChange={({ target }) => setComment(target.value)}/>
+        <button id='createCommetnButton' type='submit' className='createComment'>add comment</button>
+    </form>
+  )
+}
 
 const BlogEntry = ({ handleLike, handleRemove }) => {
   const [user, userDispatch] = useContext(UserContext)
@@ -16,7 +52,7 @@ const BlogEntry = ({ handleLike, handleRemove }) => {
   const blog = queryClient.getQueryData('blogs').filter(b => b.id === id)[0] 
   console.log('Blog entry', blog, id)
 
-  const { title, url, author, likes } = blog
+  const { title, url, author, likes, comments } = blog
   const bUser = blog.user
 
   const blogStyle = {
@@ -33,9 +69,15 @@ const BlogEntry = ({ handleLike, handleRemove }) => {
       <div  style={blogStyle} className='blogEntry'>
         <p id='entryTitle' className='title'>Title: {title}</p>
         <p id='entryAuthor' className='author'>Author: {author}</p>  
-        <p id='entryUrl' className='url'>{url}</p>
+        <a id='entryUrl' className='url' href={url}>{url}</a>
         <p id='entryLikes'>likes {likes} <button id='likeButton' className='likes' onClick={() => handleLike(blog)}>like</button></p>
         <p id='user' className='user'>{bUser.username}</p>
+        <div id='comments' className='comments'>
+          <h3>comments</h3>
+          <AddCommentForm id={id} />
+          { comments.map(c => (<p className='comment'>{c.content}</p>))
+          }
+        </div>
         { user.username === bUser.username
             ? <button id="removeButton" onClick={() => handleRemove(blog)}>remove</button>
             : <></>

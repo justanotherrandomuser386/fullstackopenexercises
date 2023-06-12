@@ -17,6 +17,13 @@ const addBlog = async (blog) => {
   return response.data
 }
 
+const addComment = async ({id, comment}) => {
+  console.log('blogService.addComment', id, comment)
+  const response = await axios.post(`${baseURL}/${id}/comments`, {content: comment}, { headers: { Authorization:  `Bearer ${token}` } })
+  console.log('addComment, response')
+  return response.data
+}
+
 const updateBlog = async (blog) => {
   const id = blog.id
   blog.likes++
@@ -36,5 +43,6 @@ export default {
   addBlog,
   updateBlog,
   removeBlog,
+  addComment,
   setToken
 }

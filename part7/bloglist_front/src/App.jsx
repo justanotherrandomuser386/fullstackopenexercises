@@ -29,7 +29,6 @@ function App() {
 
   
   return (
-    <BrowserRouter>
       <UserContextProvider>
         <NotificationContext.Provider value={[notification, notificationDispatch]}>
           <Notification />       
@@ -46,7 +45,6 @@ function App() {
           </Routes>
         </NotificationContext.Provider>
       </UserContextProvider>
-    </BrowserRouter>
   )
 }
 
