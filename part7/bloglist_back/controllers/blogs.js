@@ -51,7 +51,6 @@ blogsRouter.post('/:id/comments', async (request, response, next) => {
       response.status(404).end
     }
     const blog = { comments: b.comments.concat(comment)}
-    console.log(blog, request.params.id)
     const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {new: true, runValidators: true, context: 'query'}).populate('user')
     response.status(201).json(updatedBlog)
   } catch(exception) {

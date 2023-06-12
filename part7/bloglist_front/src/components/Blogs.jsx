@@ -13,7 +13,6 @@ const AddCommentForm = ({id}) => {
   const [notification, notificationDispatch] = useContext(NotificationContext)
   const newCommentMutation = useMutation(blogsService.addComment, {
     onSuccess: (updatedBlog) => {
-      console.log('updateBlog', updatedBlog)
       const blogs = queryClient.getQueryData('blogs')
       queryClient.setQueryData('blogs', blogs.map(blog => blog.id === updatedBlog.id ? updatedBlog : blog))
       notificationDispatch({
