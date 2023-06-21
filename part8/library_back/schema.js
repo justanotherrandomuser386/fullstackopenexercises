@@ -118,7 +118,7 @@ const typeDefs = `
     allAuthors: [Author!]!
   }
   type Mutation {
-    addBook(title: String, author: String!, published: Int, genres: [String!]!): Book
+    addBook(title: String!, author: String!, published: Int!, genres: [String!]!): Book
     editAuthor(name: String!, setBornTo: Int!): Author
 }
 `

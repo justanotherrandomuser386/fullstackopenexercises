@@ -31,13 +31,16 @@ const typeDefinitions = `
     YES
     NO
   }
+  interface Node {
+    id: ID!
+  }
 
   type Address {
     street: String!
     city: String!
   }
 
-  type Person {
+  type Person implements Node {
     name: String!
     phone: String
     address: Address!
@@ -45,6 +48,7 @@ const typeDefinitions = `
   }
 
   type Query {
+    node(id: ID!): Node
     personCount: Int!
     allPersons(phone: YesNo): [Person!]!
     findPerson(name: String!): Person
@@ -66,6 +70,7 @@ const typeDefinitions = `
 
 const resolvers = {
   Query: {
+    node: (root, args) => persons.find(person => person.id === args.id),
     personCount: () => persons.length,
     allPersons: (root, args) => {
       if (!args.phone) {
@@ -104,13 +109,13 @@ const resolvers = {
       return person
     },
     editNumber: (root, args) => {
-      const peson = person.find(p => p.name === args.name)
+      const person = persons.find(p => p.name === args.name)
       if (!person) {
         return null
       }
 
       const updatedPerson = { ...person, phone: args.phone }
-      persons = persons.maps(p => p.name === args.name ? updatedPerson : p)
+      persons = persons.map(p => p.name === args.name ? updatedPerson : p)
       return updatedPerson
     }
   }
