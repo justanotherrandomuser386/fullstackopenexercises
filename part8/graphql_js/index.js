@@ -1,7 +1,28 @@
 import { createSchema, createYoga } from 'graphql-yoga'
-import { randomUUID } from 'node:crypto'
-import { createServer } from 'node:http'
 import { GraphQLError } from 'graphql'
+import { createServer } from 'node:http'
+
+
+import mongoose from 'mongoose'
+mongoose.set('strictQuery', false)
+
+import Person from './src/models/person.js'
+import User from './src/models/user.js'
+import dotenv from 'dotenv'
+dotenv.config()
+
+import jwt from 'jsonwebtoken'
+
+const MONGODB_URI = process.env.MONGODB_URI
+
+console.log('connecting to', MONGODB_URI)
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('connected to MongoDB')
+  })
+  .catch(error => {
+    console.log('connection error', error.message)
+  })
 
 let persons = [
   {
@@ -47,11 +68,22 @@ const typeDefinitions = `
     id: ID!
   }
 
+  type User implements Node {
+    username: String
+    friends: [Person!]!
+    id: ID!
+  }
+
+  type Token {
+    value: String!
+  }
+
   type Query {
     node(id: ID!): Node
     personCount: Int!
     allPersons(phone: YesNo): [Person!]!
     findPerson(name: String!): Person
+    me: User
   }
 
   type Mutation {
@@ -65,24 +97,32 @@ const typeDefinitions = `
       name: String!
       phone: String!
     ): Person
+    createUser(
+      username: String!
+    ): User
+    login(
+      username: String!
+      password: String!
+    ): Token
+    addAsFriend(
+      name: String!
+    ): User
   }
 `
 
 const resolvers = {
   Query: {
-    node: (root, args) => persons.find(person => person.id === args.id),
-    personCount: () => persons.length,
-    allPersons: (root, args) => {
+    node: async (root, args) => Person.findOne({ id: args.id }),
+    personCount: async () => Person.collection.countDocuments(),
+    allPersons: async (root, args) => {
       if (!args.phone) {
-        return persons
-      }
-      const byPhone = (peson) =>
-        args.phone === 'YES' ? peson.phone : !person.phone
-      return persons.filter(byPhone)
+        return Person.find({})
+      }  
+      return Person.find({ phone: { $exists: args.phone === 'YES' } })
     },
-    findPerson: (root, args) => {
-      console.log(args)
-      return persons.find(p => p.name === args.name)
+    findPerson: async (root, args) => Person.findOne({  name: args.name }),
+    me: (root, args, context) => {
+      return context.currentUser
     }
   },
   Person: {
@@ -94,29 +134,97 @@ const resolvers = {
     }
   },
   Mutation: {
-    addPerson: (root, args) => {
-      if (persons.find(p => p.name === args.name)) {
-        throw new GraphQLError('Name must be unique', {
+    addPerson: async (root, args, context) => {
+      const person = new Person({...args})
+      const currentUser = context.currentUser
+      
+      if (!currentUser) {
+        throw new GraphQLError('not authenticated', {
           extensions: {
-            code: 'BAD_USER_INPUT',
-            invalidArgs: args.name
+            code: 'BAD_USER_INPUT'
           }
         })
       }
-      const person = { ...args, id: randomUUID() }
-      persons = persons.concat(person)
-      console.log('addPerson', persons)
+      
+      try {
+        await person.save()
+        currentUser.friends = currentUser.friends.concat(person)
+        await currentUser.save()
+      } catch (error) {
+        throw new GraphQLError('saving person failed', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.name,
+            error
+          }
+        })
+      }
       return person
     },
-    editNumber: (root, args) => {
-      const person = persons.find(p => p.name === args.name)
-      if (!person) {
-        return null
+    editNumber: async (root, args) => {
+      const person = await Person.findOne({ name: args.name})
+      person.phone = args.phone
+      try {
+        await person.save()
+      } catch (error) {
+        throw new GraphQLError('Saving number failed', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.name,
+            error
+          }
+        })
+      }
+      return person
+    },
+    createUser: async (root, args) => {
+      const user = new User({ username: args.username})
+      return user.save()
+        .catch(error => {
+          throw new GraphQLError('Creating user failed', {
+            extensions: {
+              code: 'BAD_USER_INPUT',
+              invalidArgs: args.username,
+              error
+            }
+          })
+        })
+    },
+    login: async (root, args) => {
+      const user = await User.findOne({ username: args.username })
+
+      if ( !user || args.password !== process.env.SECRET) {
+        throw new GraphQLError('wrong credentials', {
+          extensions: {
+            code: 'BAD_USER_INPUT'
+          }
+        })
       }
 
-      const updatedPerson = { ...person, phone: args.phone }
-      persons = persons.map(p => p.name === args.name ? updatedPerson : p)
-      return updatedPerson
+      const userForToken = {
+        username: user.username,
+        id: user._id
+      }
+
+      return { value: jwt.sign(userForToken, process.env.JWT_SECRET) }
+    },
+    addAsFriend: async (root, args, { currentUser }) => {
+      const isFriend = person => currentUser.friends.map(f => f._id.toString()).incledes(person._id.toString())
+
+      if (!currentUser) {
+        throw new GraphQLError('not authenticated', {
+          extensions: {
+            code: 'BAD_USER_INPUT'
+          }
+        })
+      }
+
+      const person = await Person.findOne({ name: args.name })
+      if ( !isFriend(person) ) {
+        currentUser.friends = currentUser.friends.concat(person)
+        currentUser.save()
+      }
+      return currentUser
     }
   }
 }
@@ -126,10 +234,22 @@ const schema = createSchema({
   typeDefs: typeDefinitions
 })
 
-const yoga = createYoga({ schema })
+const context = async ({ req, res }) => {
+  const auth = req ? req.headers.authorization : null
+  if (auth && auth.startsWith('Bearer ')) {
+    const decodedToken = jwt.verify(
+      auth.substring(7), process.env.JWT_SECRET
+    )
+
+    const currentUser = await User.findById(decodedToken.id).populate('friends')
+    return { currentUser }
+  }
+}
+
+const yoga = createYoga({ schema, context })
 
 const server = createServer(yoga)
 
 server.listen(4000, () => {
   console.log('Running a GraphQL Yoga server at http://localhost:4000')
-})
+}) 

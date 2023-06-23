@@ -1,10 +1,15 @@
 import express from 'express'
 import { createYoga } from 'graphql-yoga'
 import schema from './schema.js'
+import { context } from './schema.js'
+
 
 const server = express()
 
-const yoga = createYoga({ schema })
+const yoga = createYoga({ 
+  schema,
+  context
+})
 
 server.use(yoga.graphqlEndpoint, yoga)
 server.listen(4000)

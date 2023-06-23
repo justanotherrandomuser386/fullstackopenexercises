@@ -1,5 +1,28 @@
 import { createSchema } from 'graphql-yoga'
 import { randomUUID } from 'node:crypto'
+import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
+import dotenv from 'dotenv'
+dotenv.config()
+
+import Book from './src/models/book.js'
+import Author from './src/models/author.js'
+import User from './src/models/user.js'
+import { GraphQLError } from 'graphql'
+
+
+const MONGODB_URI = process.env.MONGODB_URI
+
+console.log('connecting to', MONGODB_URI)
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('connected to MongoDB')
+  })
+  .catch(error => {
+    console.log('connection error', error.message)
+  })
+
+
 
 let authors = [
   {
@@ -104,31 +127,48 @@ const typeDefs = `
     born: Int
     bookCount: Int!
   }
+  
   type Book {
     title: String!
     published: Int!
-    author: String!
+    author: Author!
     id: ID!
     genres: [String!]!
   }
+
+  type User {
+    username: String!
+    favoriteGenre: String!
+    id: ID!
+  }
+
+  type Token {
+    value: String!
+  }
+  
   type Query {
     bookCount: Int!
     authorCount: Int!
     allBooks(author: String, genre: String): [Book!]!
     allAuthors: [Author!]!
+    me: User
   }
+  
   type Mutation {
     addBook(title: String!, author: String!, published: Int!, genres: [String!]!): Book
     editAuthor(name: String!, setBornTo: Int!): Author
-}
+    createUser(username: String!, favoriteGenre: String!): User
+    login(username: String!, password: String!): Token
+  }
 `
 
 const resolvers = {
   Query: {
-    bookCount: () => books.length,
-    authorCount: () => authors.length,
-    allBooks: (root, args) => {
-      let result = [...books]
+    bookCount: async () => await Book.countDocuments(),
+    authorCount: async () => await Author.countDocuments(),
+    allBooks: async (root, args) => {
+      let result = await Book.find({})
+
       if (args.author) {
         result = result.filter(b => b.author === args.author)
       }
@@ -137,21 +177,49 @@ const resolvers = {
       }
       return result
     },
-    allAuthors: () => authors
+    allAuthors: async () => await Author.find(),
+    me: (root, args, context) => {
+      return context.currentUser},
+    
   },
   Author: {
-    bookCount: (root) => books.filter(b => b.author === root.name).length
+    bookCount: async (root) => {
+      let books = await Book.find({})
+      return books.filter(b => b.author === root.name).length
+    }
   },
   Mutation: {
-    addBook: (root, args) => {
-      const book = { ...args, id: randomUUID()}
-      books = books.concat(book)
-      if (authors.filter(a => a.name === args.author).length === 0) {
-        authors = authors.concat({
-          name: args.author,
-          id: randomUUID(),
-        })
+    addBook: async (root, args) => {
+      console.log('args', args)
+      let author = await Author.findOne({ name: args.author })
+      if (!author) {
+        author = new Author({ name: args.author })
+        try {
+          await author.save()
+        } catch (error) {
+            throw new GraphQLError('can author book', {
+              extensions: {
+                code: 'USER_INPUT_ERROR',
+                invalidArgs: args,
+                error
+              }
+            })
+          }
       }
+      console.log('author', author)
+      const book = new Book ({ ...args, author })
+      console.log('book',book)
+      try {
+        await book.save()
+      } catch (error) {
+          throw new GraphQLError('can create book', {
+            extensions: {
+              code: 'USER_INPUT_ERROR',
+              invalidArgs: args,
+              error
+            }
+          })
+        }
       return book
     },
     editAuthor: (root, args) => {
@@ -162,7 +230,50 @@ const resolvers = {
         return updatedAuthor
       }
       return null
-    }
+    },
+    createUser: async (root, args) => {
+      const user = new User ({ username: args.username})
+      try {
+        await user.save()
+      } catch(error) {
+        throw new GraphQLError('can\'t creaate user', {
+          extensions: {
+            code: 'BAB_USER_INPUT',
+            invalidArgs: args.username,
+            error
+          }
+        })
+      }
+      return user
+    },
+    login: async (root, args) => {
+      const user = await User.findOne({ username: args.username })
+      if (!user || args.password != process.env.SECRET) {
+        throw new GraphQLError('wrong credential', {
+          extensions: {
+            code: 'BAB_USER_INPUT'
+          }
+        })
+      }
+
+      const userForToken = {
+        username: user.username,
+        id: user._id
+      }
+
+      return { value: jwt.sign(userForToken, process.env.JWT_SECRET)}
+    },
+  }
+}
+
+const context = async ({ req, res }) => {
+  const auth = req ? req.headers.authorization : null
+  if (auth && auth.startsWith('Bearer ')) {
+    const decodedToken = jwt.verify(auth.substring(7), process.env.JWT_SECRET)
+
+    const currentUser = await User.findById(decodedToken.id)
+
+    return { currentUser }
   }
 }
 
@@ -172,3 +283,4 @@ const schema = createSchema({
 })
 
 export default schema
+export { context }
