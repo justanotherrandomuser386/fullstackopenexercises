@@ -1,6 +1,6 @@
 import { useMutation } from '@apollo/client'
 import { useState } from 'react'
-import { ADD_BOOK } from '../queries'
+import { ADD_BOOK, ALL_BOOKS } from '../queries'
 
 
 const GenresFrom = ({ genres, setGenres }) => {
@@ -26,7 +26,9 @@ const AddBook = () => {
   const [published, setPublished] = useState('')
   const [genres, setGenres] = useState([])
 
-  const [createBook] = useMutation(ADD_BOOK)
+  const [createBook] = useMutation(ADD_BOOK, {
+    refetchQueries: [ ALL_BOOKS ]
+  })
   
   const addBook = (event) => {
     event.preventDefault()
@@ -43,13 +45,13 @@ const AddBook = () => {
   return (
     <form onSubmit={addBook}>
       <div>
-        title <input required='true' value={title} onChange={event => setTitle(event.target.value)} />
+        title <input required={true} value={title} onChange={event => setTitle(event.target.value)} />
       </div>
       <div>
-        author <input required='true' value={author} onChange={event => setAuthor(event.target.value)} />
+        author <input required={true} value={author} onChange={event => setAuthor(event.target.value)} />
       </div>
       <div>
-        published <input required='true' value={published} type='number' onChange={event => setPublished(event.target.value)} />
+        published <input required={true} value={published} type='number' onChange={event => setPublished(event.target.value)} />
       </div>
       <GenresFrom genres={genres} setGenres={setGenres}/>
       <div>[{genres.join(', ')}]</div>

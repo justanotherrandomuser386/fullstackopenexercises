@@ -11,7 +11,13 @@ const PersonForm = ({ setError }) => {
 
 
   const [ createPerson ] = useMutation(CREATE_PERSON, {
-    refetchQueries: [ { query: ALL_PERSONS } ],
+    update: (cache, response) => {
+      cache.updateQuery({ query: ALL_PERSONS }, ({ allPersons }) => {
+        return {
+          allPersons: allPersons.concat(response.data.addPerson),
+        }
+      })
+    },
     onError: (error) => {
       const messages = error.graphQLErrors[0].message
       setError(messages)
@@ -22,7 +28,13 @@ const PersonForm = ({ setError }) => {
     event.preventDefault()
 
 
-    createPerson({  variables: { name, phone, street, city } })
+    createPerson({  variables: { 
+        name,
+        phone: phone.length > 0 ? phone : undefined,
+        street,
+        city,
+      }
+    })
 
     setName('')
     setPhone('')

@@ -6,6 +6,10 @@ const schema = new mongoose.Schema({
     required: true,
     minlenght: 3
   },
+  favoriteGenre: {
+    type: String,
+  
+  }
 })
 
 export default mongoose.model('User', schema)

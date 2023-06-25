@@ -9,6 +9,7 @@ import Book from './src/models/book.js'
 import Author from './src/models/author.js'
 import User from './src/models/user.js'
 import { GraphQLError } from 'graphql'
+import { arch } from 'node:os'
 
 
 const MONGODB_URI = process.env.MONGODB_URI
@@ -149,7 +150,7 @@ const typeDefs = `
   type Query {
     bookCount: Int!
     authorCount: Int!
-    allBooks(author: String, genre: String): [Book!]!
+    allBooks(author: String, genre: [String]): [Book!]!
     allAuthors: [Author!]!
     me: User
   }
@@ -167,13 +168,14 @@ const resolvers = {
     bookCount: async () => await Book.countDocuments(),
     authorCount: async () => await Author.countDocuments(),
     allBooks: async (root, args) => {
-      let result = await Book.find({})
-
+      let result = await Book.find({}).populate('author')
+      console.log('allBooks result',result)
       if (args.author) {
         result = result.filter(b => b.author === args.author)
       }
-      if (args.genre) {
-        result = result.filter(b => b.genres.includes(args.genre))
+      console.log('args.genre', args.genre)
+      if (args.genre.length > 0) {
+        result = result.filter(b => {return b.genres.filter(g => args.genre.includes(g)).length > 0})
       }
       return result
     },
@@ -184,13 +186,20 @@ const resolvers = {
   },
   Author: {
     bookCount: async (root) => {
-      let books = await Book.find({})
-      return books.filter(b => b.author === root.name).length
+      let books = await Book.find({}).populate('author')
+      return books.filter(b => b.author.name === root.name).length
     }
   },
   Mutation: {
-    addBook: async (root, args) => {
+    addBook: async (root, args, context) => {
       console.log('args', args)
+      if (!context.currentUser) {
+        throw new GraphQLError('not authenticated', {
+          extensions: {
+            code: 'BAD_USER_INPUT'
+          }
+        })
+      }
       let author = await Author.findOne({ name: args.author })
       if (!author) {
         author = new Author({ name: args.author })
@@ -199,7 +208,7 @@ const resolvers = {
         } catch (error) {
             throw new GraphQLError('can author book', {
               extensions: {
-                code: 'USER_INPUT_ERROR',
+                code: 'BAD_USER_INPUT',
                 invalidArgs: args,
                 error
               }
@@ -214,7 +223,7 @@ const resolvers = {
       } catch (error) {
           throw new GraphQLError('can create book', {
             extensions: {
-              code: 'USER_INPUT_ERROR',
+              code: 'BAD_USER_INPUT',
               invalidArgs: args,
               error
             }
@@ -222,7 +231,14 @@ const resolvers = {
         }
       return book
     },
-    editAuthor: (root, args) => {
+    editAuthor: (root, args, context) => {
+      if (!context.currentUser) {
+        throw new GraphQLError('not authenticated', {
+          extensions: {
+            code: 'BAD_USER_INPUT'
+          }
+        })
+      }
       const author = authors.find((a) => a.name === args.name)
       if (author !== undefined) {
         const updatedAuthor = { ...author, born:args.setBornTo }

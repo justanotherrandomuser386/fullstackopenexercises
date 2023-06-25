@@ -1,16 +1,54 @@
 import { useQuery } from '@apollo/client'
 import { ALL_BOOKS } from '../queries'
+import { useState } from 'react'
 
-const Books = () => {
+  const Books = () => {
+
+  const [filter, setFilter] = useState([])
+
   const result = useQuery(
     ALL_BOOKS,
-    {}
+    {variables : {
+      genre: filter
+    }}
   )
+
+
 
   if (result.loading) {
     return <div>loading</div>
   }
+  console.log('result.data.allBooks', result.data.allBooks)
+  console.log('filter', filter)
+  
+  const allGenres = result.data.allBooks.reduce((acc, curr) => {
+    curr.genres.map(g => {
+      if (!acc.includes(g))
+        acc.push(g)
+    })
+    return acc
+  }, [])
+  
+  console.log('allGenres',allGenres)
+  console.log('filterHandler', filter)
+  const filterHandler  = (event) => {
+    console.log('fh event', event)
+    if (event.target.checked) {
+      console.log('checked')
+      if (event.target.value === 'all') {
+        setFilter([])
+      } else {
+        setFilter(filter.concat(event.target.value))
+      }
+    } else {
+      console.log('unchecked')
+      setFilter(filter.filter(f => f != event.target.value))
+    }
 
+  }
+  {
+    console.log('filtered',result.data.allBooks.filter(b => {return filter.length === 0 || b.genres.filter(g => filter.includes(g)).length > 0}))
+  }
   return (
     <div>
       <h2>books</h2>
@@ -23,9 +61,24 @@ const Books = () => {
           </tr>
         </thead>
         <tbody>
-          {result.data.allBooks.map(b => <tr key={b.id}><td>{b.title}</td><td>{b.author}</td><td>{b.published}</td></tr>)}
+          {result.data.allBooks.map(b => <tr key={b.id}><td>{b.title}</td><td>{b.author.name}</td><td>{b.published}</td></tr>)}
         </tbody>
       </table>
+        {allGenres.map(genre => {
+          return (
+            <span key={genre}>
+              <input type='checkbox' name='filter' id={genre} value={genre} onChange={filterHandler} checked={filter.includes(genre) ? true : false} />
+              <label htmlFor={genre}>{genre}</label>
+            </span>
+          )
+        }
+        )}
+        <span>
+          <input type='checkbox' name='filter' id={'all'} value={'all'} onChange={filterHandler} checked={filter.length === 0 ? true : false} />
+          <label htmlFor={'all'}>all</label>
+
+        </span>
+        
     </div>
   )
 }
