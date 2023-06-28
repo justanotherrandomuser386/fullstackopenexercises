@@ -9,8 +9,30 @@ import {
   Link,
   BrowserRouter
 } from 'react-router-dom'
-import { useApolloClient } from '@apollo/client'
+import { useApolloClient, useSubscription } from '@apollo/client'
 import Recommended from './components/Recommended'
+import { BOOK_ADDED, ALL_BOOKS } from './queries.js'
+
+
+export const updateCache = (cache, query, addedBook) => {
+  console.log('cache', cache)
+  console.log('query', query)
+  console.log('addedBook', addedBook)
+  const uniqByName = (a) => {
+    let seen = new Set()
+    return a.filter((item) => {
+      let k = item.title
+      return seen.has(k) ? false : seen.add(k)
+    })
+  }
+  console.log('pre cache.updateQuery')
+  cache.updateQuery(query, ({ allBooks }) => {
+    console.log('inside cache.updateQuery allBooks', allBooks)
+    return {
+      allBooks: uniqByName(allBooks.concat(addedBook))
+    }
+  })
+}
 
 function App() {
 
@@ -19,9 +41,19 @@ function App() {
   const style = {
     padding: 5
   }
+  
+const client = useApolloClient()
+  
+  useSubscription(BOOK_ADDED, {
+    onData: ({ data }) => {
+      const addedBook = data.data.bookAdded
+      updateCache(client.cache, { query: ALL_BOOKS, variables: { genre:[] }}, addedBook)
+      window.alert(`${addedBook.title} added`)
+      console.log((data))
+    }
+  })
 
-  const client = useApolloClient()
-
+  
   const logout = () => {
     localStorage.clear()
     setToken(null)

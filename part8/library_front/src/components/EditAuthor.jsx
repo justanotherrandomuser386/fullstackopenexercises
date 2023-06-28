@@ -24,7 +24,8 @@ const EditAuthor = ({ authors }) => {
     <div>
       <h3>update birthyear</h3>
       <form onSubmit={editAuthor}>
-        <select value={name} onChange={event => setName(event.target.value)}>
+        <select onInput={event => setName(event.target.value)}>
+          <option value={''}> </option>
           {authors.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
         </select>
     

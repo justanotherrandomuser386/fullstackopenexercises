@@ -18,8 +18,6 @@ import { useState } from 'react'
   if (result.loading) {
     return <div>loading</div>
   }
-  console.log('result.data.allBooks', result.data.allBooks)
-  console.log('filter', filter)
   
   const allGenres = result.data.allBooks.reduce((acc, curr) => {
     curr.genres.map(g => {
@@ -29,25 +27,17 @@ import { useState } from 'react'
     return acc
   }, [])
   
-  console.log('allGenres',allGenres)
-  console.log('filterHandler', filter)
   const filterHandler  = (event) => {
-    console.log('fh event', event)
     if (event.target.checked) {
-      console.log('checked')
       if (event.target.value === 'all') {
         setFilter([])
       } else {
         setFilter(filter.concat(event.target.value))
       }
     } else {
-      console.log('unchecked')
       setFilter(filter.filter(f => f != event.target.value))
     }
 
-  }
-  {
-    console.log('filtered',result.data.allBooks.filter(b => {return filter.length === 0 || b.genres.filter(g => filter.includes(g)).length > 0}))
   }
   return (
     <div>

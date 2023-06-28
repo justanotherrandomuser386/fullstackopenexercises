@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 dotenv.config()
-
+import { createPubSub } from 'graphql-yoga'
 import Book from './src/models/book.js'
 import Author from './src/models/author.js'
 import User from './src/models/user.js'
@@ -120,6 +120,7 @@ let books = [
 /*
   you can remove the placeholder query once your first own has been implemented 
 */
+const pubSub = createPubSub()
 
 const typeDefs = `
   type Author {
@@ -161,6 +162,10 @@ const typeDefs = `
     createUser(username: String!, favoriteGenre: String!): User
     login(username: String!, password: String!): Token
   }
+
+  type Subscription {
+    bookAdded: Book!
+  }
 `
 
 const resolvers = {
@@ -184,12 +189,14 @@ const resolvers = {
       return context.currentUser},
     
   },
-  Author: {
-    bookCount: async (root) => {
-      let books = await Book.find({}).populate('author')
-      return books.filter(b => b.author.name === root.name).length
-    }
-  },
+  //Author: {
+    //bookCount: async (root) => {
+      //const books = await Book.find({}).populate('author')
+      //return books.filter(b => b.author.name === root.name).length
+      //console.log('root', root)
+      //return root.books.length
+    //}
+  //},
   Mutation: {
     addBook: async (root, args, context) => {
       console.log('args', args)
@@ -202,7 +209,7 @@ const resolvers = {
       }
       let author = await Author.findOne({ name: args.author })
       if (!author) {
-        author = new Author({ name: args.author })
+        author = new Author({ name: args.author, bookCount: 0 })
         try {
           await author.save()
         } catch (error) {
@@ -221,7 +228,7 @@ const resolvers = {
       try {
         await book.save()
       } catch (error) {
-          throw new GraphQLError('can create book', {
+          throw new GraphQLError('can\'t create book', {
             extensions: {
               code: 'BAD_USER_INPUT',
               invalidArgs: args,
@@ -229,9 +236,11 @@ const resolvers = {
             }
           })
         }
+      await Author.findOneAndUpdate({ name: args.author }, {$set: { bookCount:author.bookCount + 1  }})
+      context.pubSub.publish('bookAdded', { book })
       return book
     },
-    editAuthor: (root, args, context) => {
+    editAuthor: async (root, args, context) => {
       if (!context.currentUser) {
         throw new GraphQLError('not authenticated', {
           extensions: {
@@ -239,13 +248,8 @@ const resolvers = {
           }
         })
       }
-      const author = authors.find((a) => a.name === args.name)
-      if (author !== undefined) {
-        const updatedAuthor = { ...author, born:args.setBornTo }
-        authors = authors.map(a => a.name === updatedAuthor.name ? updatedAuthor : a)
-        return updatedAuthor
-      }
-      return null
+      const author = await Author.findOneAndUpdate({ name:args.name }, {$set : {born: args.setBornTo}})
+      return author
     },
     createUser: async (root, args) => {
       const user = new User ({ username: args.username})
@@ -263,6 +267,7 @@ const resolvers = {
       return user
     },
     login: async (root, args) => {
+      console.log('args', args)
       const user = await User.findOne({ username: args.username })
       if (!user || args.password != process.env.SECRET) {
         throw new GraphQLError('wrong credential', {
@@ -279,7 +284,13 @@ const resolvers = {
 
       return { value: jwt.sign(userForToken, process.env.JWT_SECRET)}
     },
-  }
+  },
+  Subscription: {
+    bookAdded: {
+      subscribe: (root, args, context) => context.pubSub.subscribe('bookAdded'),
+      resolve: (payload) => payload.book
+    }
+  },
 }
 
 const context = async ({ req, res }) => {
@@ -289,8 +300,9 @@ const context = async ({ req, res }) => {
 
     const currentUser = await User.findById(decodedToken.id)
 
-    return { currentUser }
+    return { currentUser, pubSub }
   }
+  return { pubSub }
 }
 
 const schema = createSchema({
